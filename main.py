@@ -45,9 +45,9 @@ def create_parser() -> argparse.ArgumentParser:
 
 def get_file_paths(path: str, recursive=False) -> list[str]:
     list_of_files = []
-    for _, dirs, files in os.walk(path):
+    for base_path, dirs, files in os.walk(path):
         for file in files:
-            list_of_files.append(os.path.join(path, file))
+            list_of_files.append(os.path.join(base_path, file))
         if not recursive:
             break
     return list_of_files
