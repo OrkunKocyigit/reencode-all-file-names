@@ -1,0 +1,1 @@
+### Python script that batch renames file names with badly encoded names. Mostly for anime and manga.
