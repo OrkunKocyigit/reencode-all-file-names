@@ -38,6 +38,8 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-t", "--target", type=str, help="Target encoding of the file", metavar="target", required=True)
     parser.add_argument("-r", "--recursive", type=bool, help="Renames sub folders in directory in passed"
                         , action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("-i", "--ignore-errors", type=bool, help="Ignore encoding errors if present"
+                        , action=argparse.BooleanOptionalAction, default=False)
     return parser
 
 
@@ -74,12 +76,18 @@ def rename_file(file: File) -> None:
     pass
 
 
-def rename_file_list(file_list: list[File], source: str, target: str) -> None:
+def rename_file_list(file_list: list[File], source: str, target: str, ignore_errors=False) -> None:
     for file in file_list:
         file_name = file.name
-        converted_name = convert_file_name(file_name, source, target)
-        file.converted_name = converted_name
-        rename_file(file)
+        try:
+            converted_name = convert_file_name(file_name, source, target)
+            file.converted_name = converted_name
+            rename_file(file)
+        except (UnicodeEncodeError, UnicodeDecodeError) as e:
+            if ignore_errors:
+                print("{} file cannot be processed".format(file_name), end="\n")
+            else:
+                raise e
     pass
 
 
@@ -87,7 +95,7 @@ def run():
     arg_parser = create_parser()
     result = vars(arg_parser.parse_args())
     file_list = create_file_tree(result["path"], result["recursive"])
-    rename_file_list(file_list, result["source"], result["target"])
+    rename_file_list(file_list, result["source"], result["target"], result["ignore_errors"])
 
 
 if __name__ == '__main__':

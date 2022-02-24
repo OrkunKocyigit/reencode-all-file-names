@@ -1,0 +1,1 @@
+pyinstaller main.py --onefile --clean --name reencode-all-file-names
