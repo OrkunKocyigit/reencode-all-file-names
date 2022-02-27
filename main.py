@@ -1,10 +1,12 @@
 import argparse
 import os
+from typing import Tuple
 
 
 class File:
-    def __init__(self, path: str):
+    def __init__(self, path: str, folder=False):
         self.path = path
+        self.folder = folder
         self._converted_name = None
 
     @property
@@ -12,7 +14,7 @@ class File:
         return os.path.basename(self.path)
 
     @property
-    def dir_path(self):
+    def dir_path(self) -> str:
         return os.path.dirname(self.path)
 
     @property
@@ -20,7 +22,7 @@ class File:
         return self._converted_name
 
     @converted_name.setter
-    def converted_name(self, name: str):
+    def converted_name(self, name: str) -> None:
         self._converted_name = name
 
 
@@ -40,26 +42,34 @@ def create_parser() -> argparse.ArgumentParser:
                         , action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("-i", "--ignore-errors", type=bool, help="Ignore encoding errors if present"
                         , action=argparse.BooleanOptionalAction, default=False)
+    parser.add_argument("-d", "--directories", type=bool, help="Renames folders as well as files"
+                        , action=argparse.BooleanOptionalAction, default=False)
     return parser
 
 
-def get_file_paths(path: str, recursive=False) -> list[str]:
+def get_file_paths(path: str, recursive=False) -> Tuple[list[str], list[str]]:
     list_of_files = []
+    list_of_folders = []
     for base_path, dirs, files in os.walk(path):
         for file in files:
             list_of_files.append(os.path.join(base_path, file))
+        for folder in dirs:
+            list_of_folders.append(os.path.join(base_path, folder))
         if not recursive:
             break
-    return list_of_files
+    return list_of_files, list_of_folders
 
 
-def create_file_tree(path: str, recursive=False) -> list[File]:
-    result = []
+def create_file_tree(path: str, recursive=False) -> Tuple[list[File], list[File]]:
+    all_files = []
+    all_folders = []
     if os.path.isfile(path):
-        result.append(File(path))
+        all_files.append(File(path))
     else:
-        result = map(lambda x: File(x), get_file_paths(path, recursive))
-    return result
+        file_paths, folder_paths = get_file_paths(path, recursive)
+        all_files = map(lambda x: File(x), file_paths)
+        all_folders = map(lambda x: File(x, True), folder_paths)
+    return all_files, all_folders
 
 
 def convert_file_name(file_name, source, target):
@@ -94,8 +104,10 @@ def rename_file_list(file_list: list[File], source: str, target: str, ignore_err
 def run():
     arg_parser = create_parser()
     result = vars(arg_parser.parse_args())
-    file_list = create_file_tree(result["path"], result["recursive"])
+    file_list, folder_list = create_file_tree(result["path"], result["recursive"])
     rename_file_list(file_list, result["source"], result["target"], result["ignore_errors"])
+    if result["directories"]:
+        rename_file_list(folder_list, result["source"], result["target"], result["ignore_errors"])
 
 
 if __name__ == '__main__':
