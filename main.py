@@ -1,6 +1,7 @@
 import argparse
 import os
 from typing import Tuple
+from pathlib import Path
 
 
 class File:
@@ -20,6 +21,10 @@ class File:
     @property
     def converted_name(self) -> str:
         return self._converted_name
+
+    @property
+    def path_length(self):
+        return len(Path(self.path).parts)
 
     @converted_name.setter
     def converted_name(self, name: str) -> None:
@@ -67,8 +72,10 @@ def create_file_tree(path: str, recursive=False) -> Tuple[list[File], list[File]
         all_files.append(File(path))
     else:
         file_paths, folder_paths = get_file_paths(path, recursive)
-        all_files = map(lambda x: File(x), file_paths)
-        all_folders = map(lambda x: File(x, True), folder_paths)
+        all_files = list(map(lambda x: File(x), file_paths))
+        all_files.sort(reverse=True, key=lambda x: x.path_length)
+        all_folders = list(map(lambda x: File(x, True), folder_paths))
+        all_folders.sort(reverse=True, key=lambda x: x.path_length)
     return all_files, all_folders
 
 
